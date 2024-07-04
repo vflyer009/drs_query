@@ -1,30 +1,36 @@
-import json
-import mysql.connector
-import urllib3
-from urllib.parse import urlencode
-
-DRS_AD_URL = "https://drs.faa.gov/browse/excelExternalWindow"
-http = urllib3.PoolManager()
-
-# def get_drs_ads(base_url=DRS_BASE_URL, method=HTTP_METHOD):
-#     response = http.request(
-#         method=method,
-#         url=DRS_BASE_URL,
-#         headers={"x-api-key": DRS_API_KEY},
-#         # body=encoded_params
-#     )
+import db_query
+import pdf_utils
+import selenium_utils as sutils
 
 
-# for x in myresult:
-#   print(x[-2])
+DOWNLOAD_PATH = "/Users/$HOME/Desktop/drs_test_data"
+AD_PREFIX_STRING = "<p>"
+PDF_OUTPUT_PATH = "/Users/$HOME/Desktop/drs_test_data"
 
-ex_ad_num = "FR-ADFRAWD-2024-04557-0000000000" 
 
-full_drs_url = f"{DRS_AD_URL}/{ex_ad_num}.0001"
+def main():
+    make = "Beechcraft"
+    model = "J35"
+    set_limit = "5"
 
-response = http.request(
-    method="GET",
-    url=full_drs_url,
-)
+    db_results = db_query.lookup_ad(make, model, set_limit) 
+    print(db_results)
 
-print(response.data)
+    if not db_results:
+        print("No ADs found in Database")
+
+    for ad in db_results:
+        ad_number, unid = ad
+        drs_request_url = sutils.build_drs_request_url(unid)
+        ad_content = sutils.download_ad_content(drs_request_url)
+        ad_html_file = sutils.save_ad_content(ad_content, ad_number, DOWNLOAD_PATH)
+
+        if ad_html_file:
+            pdf_utils.convert_html_to_pdf(ad_html_file, AD_PREFIX_STRING, DOWNLOAD_PATH)
+            pdf_utils.cleanup_html_file(ad_html_file)
+        else:
+            print(f"Skipping PDF conversion for AD Number {ad_number} due to missing content.")
+
+
+if __name__ == "__main__":
+    main()
