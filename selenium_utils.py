@@ -7,33 +7,28 @@ from selenium.webdriver.support import expected_conditions as EC
 import time
 import os
 
-
 # DRS Config
 drs_base_url = "https://drs.faa.gov/browse/excelExternalWindow"
 
-#Selenium Config
+# Selenium Config
 chrome_driver_path = "/Users/josh.mac/Downloads/chromedriver-mac-arm64/chromedriver"
-chrome_options = Options()
-chrome_options.add_argument("--headless")
-
-service = Service(chrome_driver_path)
-driver = webdriver.Chrome(service=service, options=chrome_options)
-
 
 def build_drs_request_url(ad_unid):
     return f"{drs_base_url}/{ad_unid}.0001"
 
-
 def download_ad_content(drs_url):
-    driver.get(drs_url)
-    time.sleep(5)
-
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    service = Service(chrome_driver_path)
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+    
     try:
+        driver.get(drs_url)
+        time.sleep(5)
+
         print(f"Downloading AD Data")
-        wait = WebDriverWait(driver, 3)
-        print_button = wait.until(EC.element_to_be_clickable(
-            (By.ID, "printButton")
-        ))
+        wait = WebDriverWait(driver, 10)  # Increased wait time to 10 seconds
+        print_button = wait.until(EC.element_to_be_clickable((By.ID, "printButton")))
         print_button.click()
 
         time.sleep(3)
@@ -41,18 +36,20 @@ def download_ad_content(drs_url):
         ad_content = driver.page_source
     except Exception as e:
         print(f"Error: {e}")
-        driver.quit()
-        exit()
+        ad_content = None
     finally:
         driver.quit()
 
+    print(f"Finished Downloading AD Data for {drs_url}")
     return ad_content
-
 
 def save_ad_content(ad_content, ad_number, download_path):
     if not ad_content:
         print("No AD content was available")
         return None
+
+    if not os.path.exists(download_path):
+        os.makedirs(download_path)
 
     file_path = os.path.join(download_path, f"{ad_number}.html")
     
