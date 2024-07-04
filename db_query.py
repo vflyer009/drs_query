@@ -9,15 +9,14 @@ db_connection = mysql_connector.connect(
 )
 
 
-def lookup_ad(make, model):
+def lookup_ad(make, model, set_limit):
     if make and model:
         print(f"Starting AD Lookup for {make} {model}")
         db_cursor = db_connection.cursor()
-        db_cursor.execute(
-            f"SELECT `AD Number`, UNID FROM AD LIMIT 1"
-        )
+        query = f"SELECT `AD Number`, UNID FROM AD WHERE Model LIKE '%{model}%' LIMIT {set_limit}" 
+        db_cursor.execute(query)
         ad_results = db_cursor.fetchall()
         db_cursor.close()
 
-        return ad_results # Returns list of tuples
+        return ad_results  # Returns list of tuples
     return []
