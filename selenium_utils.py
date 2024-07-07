@@ -24,10 +24,10 @@ def download_ad_content(drs_url):
     
     try:
         driver.get(drs_url)
-        time.sleep(5)
+        time.sleep(10)
 
         print(f"Downloading AD Data")
-        wait = WebDriverWait(driver, 10)  # Increased wait time to 10 seconds
+        wait = WebDriverWait(driver, 10)
         print_button = wait.until(EC.element_to_be_clickable((By.ID, "printButton")))
         print_button.click()
 
